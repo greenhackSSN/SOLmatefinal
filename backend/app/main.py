@@ -1,33 +1,38 @@
+# backend/app/main.py
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from .db import get_db, engine
 from . import models, ml_wrapper
-from app.api import plans, sessions, feedback
+from .api import plans, sessions, feedback
+
+# Create DB tables on startup
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Therapy Case Allocation API")
 
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For hackathon/demo; you can restrict to ["http://localhost:3000"] later
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-models.Base.metadata.create_all(bind=engine)
-
-app.include_router(plans.router, prefix="/plan")
-app.include_router(sessions.router, prefix="/session")
-app.include_router(feedback.router, prefix="/feedback")
-
+# API Request Schemas
 class AssignRequest(BaseModel):
     name: str | None = None
     condition: str
     language: str
     workload: int
 
+# Main endpoint to assign a patient (ML integration)
 @app.post("/patients/assign")
 def assign_patient(req: AssignRequest, db: Session = Depends(get_db)):
     patient = models.Patient(name=req.name, condition=req.condition, language=req.language, workload=req.workload)
@@ -56,3 +61,8 @@ def assign_patient(req: AssignRequest, db: Session = Depends(get_db)):
     db.refresh(plan)
 
     return {"patient_id": patient.id, "therapist": therapist.name, "plan_id": plan.id, "plan": plan.details}
+
+# Include API routers from other files
+app.include_router(plans.router)
+app.include_router(sessions.router)
+app.include_router(feedback.router)

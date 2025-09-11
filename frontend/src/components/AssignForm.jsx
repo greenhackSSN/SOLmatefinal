@@ -1,6 +1,9 @@
+// frontend/src/components/AssignForm.jsx
+
 import React, { useState } from "react";
 
-export default function AssignForm() {
+// Make sure to accept the prop in the function signature
+export default function AssignForm({ onAssignSuccess }) {
   const [form, setForm] = useState({ name: "", condition: "speech_delay", language: "english", workload: 2});
   const [result, setResult] = useState(null);
 
@@ -13,10 +16,16 @@ export default function AssignForm() {
     });
     const data = await res.json();
     setResult(data);
+
+    // This is the correct placement. It should be inside the function.
+    if (onAssignSuccess) {
+      onAssignSuccess(data);
+    }
   }
 
   return (
     <div>
+      <h2>1. Assign Patient (Supervisor)</h2>
       <form onSubmit={submit}>
         <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Patient name (optional)" />
         <select value={form.condition} onChange={e=>setForm({...form,condition:e.target.value})}>
@@ -35,9 +44,11 @@ export default function AssignForm() {
 
       {result && (
         <div>
-          <h3>Assigned</h3>
+          <h3>Assignment Result</h3>
+          <p>Patient ID: {result.patient_id}</p>
           <p>Therapist: {result.therapist}</p>
-          <p>Plan: {result.plan}</p>
+          <p>Plan ID: {result.plan_id}</p>
+          <p>Initial Plan: {result.plan}</p>
         </div>
       )}
     </div>

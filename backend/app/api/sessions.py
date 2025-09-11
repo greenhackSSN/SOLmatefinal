@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.db import get_db
-from app import models
+from ..db import get_db
+from .. import models
 
-router = APIRouter()
+router = APIRouter(tags=["sessions"])
 
-class SessionLogRequest(BaseModel):
+class SessionLogCreate(BaseModel):
     patient_id: int
     therapist_id: int
     attendance: str
-    notes: str | None = ""
-    activities: str | None = ""
+    notes: str
+    activities: str
 
-@router.post("/log")
-def log_session(req: SessionLogRequest, db: Session = Depends(get_db)):
+@router.post("/session/log")
+def log_session(req: SessionLogCreate, db: Session = Depends(get_db)):
     session = models.SessionLog(
         patient_id=req.patient_id,
         therapist_id=req.therapist_id,
